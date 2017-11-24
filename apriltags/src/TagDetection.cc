@@ -134,7 +134,7 @@ void TagDetection::getRelativeTranslationRotation(double tag_size, double fx, do
 }
 
 // draw one April tag detection on actual image
-void TagDetection::draw(cv::Mat& image) const {
+void TagDetection::draw(cv::Mat& image, cv::Scalar clr) const {
   // use corner points detected by line intersection
   std::pair<float, float> p1 = p[0];
   std::pair<float, float> p2 = p[1];
@@ -155,7 +155,7 @@ void TagDetection::draw(cv::Mat& image) const {
   strSt << "#" << id;
   cv::putText(image, strSt.str(),
               cv::Point2f(cxy.first + 10, cxy.second + 10),
-              cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255));
+              cv::FONT_HERSHEY_PLAIN, 2, clr);
 }
 
 } // namespace

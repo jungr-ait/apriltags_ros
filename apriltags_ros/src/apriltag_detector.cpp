@@ -79,8 +79,21 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg, const sens
   }
   cv::Mat gray;
   cv::cvtColor(cv_ptr->image, gray, CV_BGR2GRAY);
+  
+  cv::Mat gray_half;
+  cv::resize(gray, gray_half, cv::Size((gray.cols+1)/2, (gray.rows+1)/2)); 
+  
+  cv::Mat gray_quat;
+  cv::resize(gray_half, gray_quat, cv::Size((gray_half.cols+1)/2, (gray_half.rows+1)/2)); 
+  
   std::vector<AprilTags::TagDetection>	detections = tag_detector_->extractTags(gray);
   ROS_DEBUG("%d tag detected", (int)detections.size());
+
+  std::vector<AprilTags::TagDetection>	detections_half = tag_detector_->extractTags(gray_half);
+  ROS_DEBUG("%d half tag detected ", (int)detections_half.size());
+
+  std::vector<AprilTags::TagDetection>	detections_quat = tag_detector_->extractTags(gray_quat);
+  ROS_DEBUG("%d half tag detected ", (int)detections_quat.size());
 
   double fx;
   double fy;
@@ -109,6 +122,8 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg, const sens
   geometry_msgs::PoseArray tag_pose_array;
   tag_pose_array.header = cv_ptr->header;
 
+  std::set<int> sFound_IDs;
+
   BOOST_FOREACH(AprilTags::TagDetection detection, detections){
     std::map<int, AprilTagDescription>::const_iterator description_itr = descriptions_.find(detection.id);
     if(description_itr == descriptions_.end()){
@@ -117,6 +132,13 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg, const sens
     }
     AprilTagDescription description = description_itr->second;
     double tag_size = description.size();
+    
+    if(sFound_IDs.find(detection.id) != sFound_IDs.end()) 
+    {
+		// already found!s
+		continue;
+    }
+    sFound_IDs.insert(detection.id);
 
     detection.draw(cv_ptr->image);
     Eigen::Matrix4d transform = detection.getRelativeTransform(tag_size, fx, fy, px, py);
@@ -144,6 +166,111 @@ void AprilTagDetector::imageCb(const sensor_msgs::ImageConstPtr& msg, const sens
     tf::poseStampedMsgToTF(tag_pose, tag_transform);
     tf_pub_.sendTransform(tf::StampedTransform(tag_transform, tag_transform.stamp_, tag_transform.frame_id_, description.frame_name()));
   }
+  
+  // for the half resolution:
+  BOOST_FOREACH(AprilTags::TagDetection detection, detections_half){
+    std::map<int, AprilTagDescription>::const_iterator description_itr = descriptions_.find(detection.id);
+    if(description_itr == descriptions_.end()){
+      ROS_WARN_THROTTLE(10.0, "Found tag: %d, but no description was found for it", detection.id);
+      continue;
+    }
+    
+    if(sFound_IDs.find(detection.id) != sFound_IDs.end()) 
+    {
+		// already found!s
+		continue;
+    }
+    sFound_IDs.insert(detection.id);
+    
+    AprilTagDescription description = description_itr->second;
+    double tag_size = description.size();
+
+	for(int i=0; i < 4; i++) {
+		detection.p[i].first *= 2.0f;
+		detection.p[i].second *= 2.0f;
+	}
+    detection.cxy.first *= 2.0f;
+    detection.cxy.second *= 2.0f;
+
+    detection.draw(cv_ptr->image, cv::Scalar(255,0,255));
+    Eigen::Matrix4d transform = detection.getRelativeTransform(tag_size, fx, fy, px, py);
+    Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
+    Eigen::Quaternion<double> rot_quaternion = Eigen::Quaternion<double>(rot);
+
+    geometry_msgs::PoseStamped tag_pose;
+    tag_pose.pose.position.x = transform(0, 3);
+    tag_pose.pose.position.y = transform(1, 3);
+    tag_pose.pose.position.z = transform(2, 3);
+    tag_pose.pose.orientation.x = rot_quaternion.x();
+    tag_pose.pose.orientation.y = rot_quaternion.y();
+    tag_pose.pose.orientation.z = rot_quaternion.z();
+    tag_pose.pose.orientation.w = rot_quaternion.w();
+    tag_pose.header = cv_ptr->header;
+
+    AprilTagDetection tag_detection;
+    tag_detection.pose = tag_pose;
+    tag_detection.id = detection.id;
+    tag_detection.size = tag_size;
+    tag_detection_array.detections.push_back(tag_detection);
+    tag_pose_array.poses.push_back(tag_pose.pose);
+
+    tf::Stamped<tf::Transform> tag_transform;
+    tf::poseStampedMsgToTF(tag_pose, tag_transform);
+    tf_pub_.sendTransform(tf::StampedTransform(tag_transform, tag_transform.stamp_, tag_transform.frame_id_, description.frame_name()));
+  }
+ 
+   // for the quat resolution:
+  BOOST_FOREACH(AprilTags::TagDetection detection, detections_quat){
+    std::map<int, AprilTagDescription>::const_iterator description_itr = descriptions_.find(detection.id);
+    if(description_itr == descriptions_.end()){
+      ROS_WARN_THROTTLE(10.0, "Found tag: %d, but no description was found for it", detection.id);
+      continue;
+    }
+    
+    if(sFound_IDs.find(detection.id) != sFound_IDs.end()) 
+    {
+		// already found!s
+		continue;
+    }
+    sFound_IDs.insert(detection.id);
+    
+    AprilTagDescription description = description_itr->second;
+    double tag_size = description.size();
+
+	for(int i=0; i < 4; i++) {
+		detection.p[i].first *= 4.0f;
+		detection.p[i].second *= 4.0f;
+	}
+    detection.cxy.first *= 4.0f;
+    detection.cxy.second *= 4.0f;
+
+    detection.draw(cv_ptr->image, cv::Scalar(0,255,255));
+    Eigen::Matrix4d transform = detection.getRelativeTransform(tag_size, fx, fy, px, py);
+    Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
+    Eigen::Quaternion<double> rot_quaternion = Eigen::Quaternion<double>(rot);
+
+    geometry_msgs::PoseStamped tag_pose;
+    tag_pose.pose.position.x = transform(0, 3);
+    tag_pose.pose.position.y = transform(1, 3);
+    tag_pose.pose.position.z = transform(2, 3);
+    tag_pose.pose.orientation.x = rot_quaternion.x();
+    tag_pose.pose.orientation.y = rot_quaternion.y();
+    tag_pose.pose.orientation.z = rot_quaternion.z();
+    tag_pose.pose.orientation.w = rot_quaternion.w();
+    tag_pose.header = cv_ptr->header;
+
+    AprilTagDetection tag_detection;
+    tag_detection.pose = tag_pose;
+    tag_detection.id = detection.id;
+    tag_detection.size = tag_size;
+    tag_detection_array.detections.push_back(tag_detection);
+    tag_pose_array.poses.push_back(tag_pose.pose);
+
+    tf::Stamped<tf::Transform> tag_transform;
+    tf::poseStampedMsgToTF(tag_pose, tag_transform);
+    tf_pub_.sendTransform(tf::StampedTransform(tag_transform, tag_transform.stamp_, tag_transform.frame_id_, description.frame_name()));
+  }
+   
   detections_pub_.publish(tag_detection_array);
   pose_pub_.publish(tag_pose_array);
   image_pub_.publish(cv_ptr->toImageMsg());

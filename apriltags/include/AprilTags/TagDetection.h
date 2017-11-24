@@ -87,7 +87,7 @@ struct TagDetection {
                                       Eigen::Vector3d& trans, Eigen::Matrix3d& rot) const;
 
   //! Draw the detection within the supplied image, including boarders and tag ID.
-  void draw(cv::Mat& image) const;
+  void draw(cv::Mat& image, cv::Scalar clr = cv::Scalar(0,0,255)) const;
 };
 
 } // namespace
