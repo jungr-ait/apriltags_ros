@@ -49,7 +49,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+file(GLOB_RECURSE include_files ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h*)
+file(GLOB_RECURSE src_files ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*)
+
 add_library(apriltag_detector
+  ${include_files}
   src/apriltag_detector.cpp
 )
 target_link_libraries(apriltag_detector

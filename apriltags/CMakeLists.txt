@@ -9,12 +9,13 @@ find_package(catkin REQUIRED COMPONENTS cmake_modules
 
 find_package(Eigen REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(OpenMP REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES apriltags
   CATKIN_DEPENDS
-  DEPENDS Eigen OpenCV
+  DEPENDS Eigen OpenCV OpenMP
 )
 
 include_directories(include include/AprilTags)
@@ -24,14 +25,27 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+file(GLOB_RECURSE include_files ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h*)
+file(GLOB_RECURSE src_files ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*)
+
 add_library(apriltags
-  src/Edge.cc src/FloatImage.cc src/GLine2D.cc src/GLineSegment2D.cc src/Gaussian.cc src/GrayModel.cc src/Homography33.cc src/MathUtil.cc src/Quad.cc src/Segment.cc src/TagDetection.cc src/TagDetector.cc src/TagFamily.cc src/UnionFindSimple.cc
+  ${include_files}
+  ${src_files}
 )
+
+if(OPENMP_FOUND)
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 target_link_libraries(apriltags
   ${Eigen_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
+  -fopenmp
 )
+
 
 #############
 ## Install ##

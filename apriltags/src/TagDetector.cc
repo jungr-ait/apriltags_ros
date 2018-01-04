@@ -24,6 +24,7 @@
 
 #include "AprilTags/TagDetector.h"
 
+#include <omp.h>
 //#define DEBUG_APRIL
 
 #ifdef DEBUG_APRIL
