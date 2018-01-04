@@ -27,11 +27,11 @@ catkin_package(
 ## Install ##
 #############
 
-
+file(GLOB_RECURSE launch_files ${CMAKE_CURRENT_SOURCE_DIR}/launch/*.launch)
 ## Mark other files for installation (e.g. launch and bag files, etc.)
  install(FILES
 #   # myfile1
-   launch/default.launch
+   ${launch_files}
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 

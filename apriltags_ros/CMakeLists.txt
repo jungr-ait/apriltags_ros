@@ -93,3 +93,11 @@ install(DIRECTORY include/apriltags_ros
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+
+file(GLOB_RECURSE launch_files ${CMAKE_CURRENT_SOURCE_DIR}/launch/*.launch)
+install(FILES
+   ${launch_files}
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
