@@ -1,0 +1,15 @@
+<!-- ROS launch file for volume filter node -->
+<launch>
+
+  <arg name="image_topic" default="/gx660r/image_rect" />
+  <arg name="camera_info" default="/gx660r/camera_info" />
+
+  <include file="$(find gscam)/v4l_gx660r_calib.launch" > </include>
+
+  <include file="$(find apriltags_ros)/launch/example.launch" >
+    <arg name="camera_info" value="$(arg camera_info)" />
+    <arg name="image_rect" value="$(arg image_topic)" />
+  </include>
+
+</launch>
+
