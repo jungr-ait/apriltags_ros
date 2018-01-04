@@ -148,7 +148,7 @@ void TagDetection::draw(cv::Mat& image, cv::Scalar clr) const {
   cv::line(image, cv::Point2f(p4.first, p4.second), cv::Point2f(p1.first, p1.second), cv::Scalar(255,0,255,0) );
 
   // mark center
-  cv::circle(image, cv::Point2f(cxy.first, cxy.second), 8, cv::Scalar(0,0,255,0), 2);
+  cv::circle(image, cv::Point2f(cxy.first, cxy.second), 8, clr, 2);
 
   // print ID
   std::ostringstream strSt;
