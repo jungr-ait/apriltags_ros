@@ -3,46 +3,71 @@
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
-
+#include <cv_bridge/cv_bridge.h>
 #include <AprilTags/TagDetector.h>
+#include <apriltags_ros/AprilTagDetectionArray.h>
 #include <tf/transform_broadcaster.h>
+#include <geometry_msgs/PoseArray.h>
 
-namespace apriltags_ros{
-
-
-class AprilTagDescription{
- public:
-  AprilTagDescription(int id, double size, std::string &frame_name):id_(id), size_(size), frame_name_(frame_name){}
-  double size(){return size_;}
-  int id(){return id_;} 
-  std::string& frame_name(){return frame_name_;} 
- private:
-  int id_;
-  double size_;
-  std::string frame_name_;
-};
+namespace apriltags_ros
+{
 
 
-class AprilTagDetector{
- public:
-  AprilTagDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh);
-  ~AprilTagDetector();
- private:
-  void imageCb(const sensor_msgs::ImageConstPtr& msg,const sensor_msgs::CameraInfoConstPtr& cam_info);
-  std::map<int, AprilTagDescription> parse_tag_descriptions(XmlRpc::XmlRpcValue& april_tag_descriptions);
+  class AprilTagDescription
+  {
+    public:
+      AprilTagDescription(int id, double size, std::string &frame_name):id_(id), size_(size), frame_name_(frame_name) {}
+      double size()
+      {
+        return size_;
+      }
+      int id()
+      {
+        return id_;
+      }
+      std::string& frame_name()
+      {
+        return frame_name_;
+      }
+    private:
+      int id_;
+      double size_;
+      std::string frame_name_;
+  };
 
- private:
-  std::map<int, AprilTagDescription> descriptions_;
-  std::string sensor_frame_id_;
-  image_transport::ImageTransport it_;
-  image_transport::CameraSubscriber image_sub_;
-  image_transport::Publisher image_pub_;
-  ros::Publisher detections_pub_;
-  ros::Publisher pose_pub_;
-  tf::TransformBroadcaster tf_pub_;
-  boost::shared_ptr<AprilTags::TagDetector> tag_detector_;
-  bool projected_optics_;
-};
+
+  class AprilTagDetector
+  {
+    public:
+      AprilTagDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh);
+      ~AprilTagDetector();
+
+    private:
+      void imageCb(const sensor_msgs::ImageConstPtr& msg,const sensor_msgs::CameraInfoConstPtr& cam_info);
+      std::map<int, AprilTagDescription> parse_tag_descriptions(XmlRpc::XmlRpcValue& april_tag_descriptions);
+
+    private:
+      std::map<int, AprilTagDescription> descriptions_;
+      std::string sensor_frame_id_;
+      image_transport::ImageTransport it_;
+      image_transport::CameraSubscriber image_sub_;
+      image_transport::Publisher image_pub_;
+      ros::Publisher detections_pub_;
+      ros::Publisher pose_pub_;
+      tf::TransformBroadcaster tf_pub_;
+      boost::shared_ptr<AprilTags::TagDetector> tag_detector_;
+      bool projected_optics_;
+      void publishDetections(const std::vector<AprilTags::TagDetection> &detections,
+                             const double scale,
+                             const double fx,
+                             const double fy,
+                             const double py,
+                             const double px,
+                             cv_bridge::CvImagePtr &cv_ptr,
+                             AprilTagDetectionArray &tag_detection_array,
+                             geometry_msgs::PoseArray &tag_pose_array,
+                             std::set<int> &sFound_IDs);
+  };
 
 
 
